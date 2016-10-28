@@ -6,8 +6,8 @@ CREATE TABLE bien (
         modelo TEXT NOT NULL,
         cantidad INTEGER NOT NULL,
                 CONSTRAINT bien_cantidad_valida CHECK (cantidad >= 0),
-        unidad TEXT ,
-        medida INTEGER,
+        unidad TEXT,
+        medida DECIMAL (8,2),
         costo_promedio DECIMAL (8,2) NOT NULL,
         CONSTRAINT bien_pk PRIMARY KEY (codigo)
 );
@@ -80,9 +80,9 @@ CREATE TABLE ente (
         codigo UUID,
         nombre TEXT NOT NULL,
         contacto TEXT NOT NULL,
-        rif INTEGER NOT NULL,
+        rif TEXT NOT NULL,
                 CONSTRAINT ente_rif_unico UNIQUE (rif),
-        direccion text NOT NULL,
+        direccion TEXT NOT NULL,
         CONSTRAINT ente_pk PRIMARY KEY (codigo)
 );
 

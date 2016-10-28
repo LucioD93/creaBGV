@@ -14,4 +14,10 @@ DROP TABLE bien,
         proveedor,
         factura,
         contiene,
-        garantia;
+        garantia,
+        orden_de_ensamblaje,
+        produce,
+        orden_de_compra,
+        posee,
+        orden_de_taller,
+        requiere;
