@@ -1,10 +1,8 @@
 CREATE EXTENSION "uuid-ossp";
-CREATE EXTENSION
-        SELECT uuid_generate_v4();
 
 CREATE TABLE bien (
         codigo INTEGER,
-                CONSTRAINT bien_codigo_valido CHECK (codigo > 0 AND codigo <= 9999999999)
+                CONSTRAINT bien_codigo_valido CHECK (codigo > 0 AND codigo <= 9999999999),
         modelo TEXT NOT NULL,
         cantidad INTEGER NOT NULL,
                 CONSTRAINT bien_cantidad_valida CHECK (cantidad >= 0),
@@ -79,7 +77,7 @@ CREATE TABLE pieza (
 );
 
 CREATE TABLE ente (
-        codigo INTEGER,
+        codigo UUID,
         nombre TEXT NOT NULL,
         contacto TEXT NOT NULL,
         rif INTEGER NOT NULL,
@@ -89,7 +87,7 @@ CREATE TABLE ente (
 );
 
 CREATE TABLE telefono (
-        codigo INTEGER NOT NULL,
+        codigo UUID NOT NULL,
         valor INTEGER NOT NULL,
         CONSTRAINT telefono_pk PRIMARY KEY (codigo, valor),
         CONSTRAINT telefono_fk FOREIGN KEY (codigo) REFERENCES ente(codigo)
@@ -97,14 +95,14 @@ CREATE TABLE telefono (
 );
 
 CREATE TABLE distribuidor (
-        codigo INTEGER,
+        codigo UUID,
         CONSTRAINT distribuidor_pk PRIMARY KEY (codigo),
         CONSTRAINT distribuidor_fk FOREIGN KEY (codigo) REFERENCES ente (codigo)
                 ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE proveedor (
-        codigo INTEGER,
+        codigo UUID,
         email TEXT NOT NULL,
         es_nacional BOOLEAN NOT NULL,
         CONSTRAINT proveedor_pk PRIMARY KEY (codigo),
@@ -113,7 +111,7 @@ CREATE TABLE proveedor (
 );
 
 CREATE TABLE factura (
-        numero INTEGER,
+        numero UUID,
         credito INTEGER DEFAULT NULL,
                 CONSTRAINT factura_credito_valido CHECK (credito = NULL OR
                         credito = 15 OR credito = 30 OR
@@ -126,19 +124,19 @@ CREATE TABLE factura (
         monto_global DECIMAL (20,2),
                 CONSTRAINT factura_monto_global_valido CHECK (
                         monto_global = (total + total * (impuesto / 100))),
-        codigo_distribuidor INTEGER,
+        codigo_distribuidor UUID,
         CONSTRAINT factura_pk PRIMARY KEY (numero),
         CONSTRAINT factura_fk FOREIGN KEY (codigo_distribuidor) REFERENCES distribuidor(codigo)
                 ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE contiene (
-        numero INTEGER NOT NULL, 
+        numero UUID NOT NULL, 
         codigo_producto INTEGER,
         codigo_componente INTEGER,
         cantidad INTEGER NOT NULL,
                 CONSTRAINT contiene_cantidad_valida CHECK (cantidad > 0),
-        CONSTRAINT contiene_pk (numero, codigo_producto),
+        CONSTRAINT contiene_pk PRIMARY KEY (numero, codigo_producto),
         CONSTRAINT contiene_fk_factura FOREIGN KEY (numero) REFERENCES factura(numero)
                 ON DELETE CASCADE ON UPDATE CASCADE,
         CONSTRAINT contiene_fk_facturado FOREIGN KEY (codigo_producto, codigo_componente) REFERENCES facturado(codigo_producto, codigo_componente)
@@ -146,10 +144,10 @@ CREATE TABLE contiene (
 );
 
 CREATE TABLE garantia (
-        serial INTEGER,
+        serial UUID,
         duracion INTEGER NOT NULL,
                 CONSTRAINT garantia_duracion_valida CHECK (duracion > 0),
-        numero INTEGER NOT NULL,
+        numero UUID NOT NULL,
         codigo_producto INTEGER NOT NULL,
         CONSTRAINT garantia_pk PRIMARY KEY (serial),
         CONSTRAINT garantia_fk_factura FOREIGN KEY (numero) REFERENCES factura(numero)
@@ -159,13 +157,13 @@ CREATE TABLE garantia (
 );
 
 CREATE TABLE orden_de_ensamblaje (
-        numero INTEGER,
+        numero UUID,
         fecha DATE NOT NULL,
         CONSTRAINT orden_de_ensamblaje_pk PRIMARY KEY (numero)
 );
 
 CREATE TABLE produce (
-        numero INTEGER NOT NULL,
+        numero UUID NOT NULL,
         codigo_producto INTEGER NOT NULL,
         cantidad INTEGER NOT NULL,
                 CONSTRAINT produce_cantidad_valida CHECK (cantidad > 0),
@@ -177,35 +175,35 @@ CREATE TABLE produce (
         CONSTRAINT produce_fk_producto FOREIGN KEY (codigo_producto) REFERENCES producto(codigo)
                 ON DELETE CASCADE ON UPDATE CASCADE,
         CONSTRAINT cantidad_mayor_igual_aprovados CHECK (cantidad >= aprobados)
-        
 );
+
 CREATE TABLE orden_de_compra (
-        numero INTEGER,
+        numero UUID,
         fecha DATE NOT NULL,
         fecha_entrega_completa DATE DEFAULT NULL,
-        codigo_proveedor INTEGER NOT NULL,
+        codigo_proveedor UUID NOT NULL,
         CONSTRAINT orden_de_compra_pk PRIMARY KEY (numero),
         CONSTRAINT orden_de_compra_fk FOREIGN KEY (codigo_proveedor) REFERENCES proveedor(codigo)
                 ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE posee (
-        numero INTEGER,
+        numero UUID,
         codigo_componente INTEGER,
         codigo_materia INTEGER,
         pedidos INTEGER NOT NULL,
         recibidos INTEGER NOT NULL,
                 CONSTRAINT posee_recibidos_valido CHECK (recibidos >= 0),
         CONSTRAINT posee_pk PRIMARY KEY (numero,codigo_componente,codigo_materia),
-        CONSTRAINT posee_fk_codigo_componente_codigo_materia FOREIGN KEY (codigo_componente,codigo_materia) REFERENCES pieza(codigo_componente,codigo_materia)
+        CONSTRAINT posee_fk_pieza FOREIGN KEY (codigo_componente,codigo_materia) REFERENCES pieza(codigo_componente,codigo_materia)
                 ON DELETE CASCADE ON UPDATE CASCADE,
-        CONSTRAINT posee_fk_numero FOREIGN KEY (numero) REFERENCES orden_de_compra(numero)               
+        CONSTRAINT posee_fk_orden_de_compra FOREIGN KEY (numero) REFERENCES orden_de_compra(numero)               
                 ON DELETE CASCADE ON UPDATE CASCADE,
         CONSTRAINT posee_pedidos_mayor_igual_recibidos CHECK (pedidos>=recibidos)
 );         
 
 CREATE TABLE orden_de_taller (
-        numero INTEGER,
+        numero UUID,
         fecha DATE NOT NULL,
         codigo_componente INTEGER NOT NULL,
         cantidad INTEGER NOT NULL,
@@ -218,13 +216,13 @@ CREATE TABLE orden_de_taller (
 );
 
 CREATE TABLE requiere(
-        numero INTEGER NOT NULL,
+        numero UUID NOT NULL,
         codigo_materia INTEGER NOT NULL,
         cantidad INTEGER NOT NULL,
                 CONSTRAINT requiere_cantidad_valida CHECK (cantidad > 0),
         CONSTRAINT requiere_pk PRIMARY KEY (numero,codigo_materia),
-        CONSTRAINT requiere_fk_numero FOREIGN KEY (numero) REFERENCES orden_de_taller(numero)
+        CONSTRAINT requiere_fk_orden_de_taller FOREIGN KEY (numero) REFERENCES orden_de_taller(numero)
                 ON DELETE CASCADE ON UPDATE CASCADE,
-        CONSTRAINT requiere_fk_codigo_materia FOREIGN KEY  (codigo_materia) REFERENCES materia_prima(codigo)
+        CONSTRAINT requiere_fk_materia FOREIGN KEY (codigo_materia) REFERENCES materia_prima(codigo)
                 ON DELETE CASCADE ON UPDATE CASCADE      
 );
